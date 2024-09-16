@@ -2,7 +2,7 @@ import serial
 import time
 
 # Set up the serial connection to the HC-06 module
-ser = serial.Serial('/dev/ttyS0', 9600)  # Adjust the port name if necessary
+ser = serial.Serial('/dev/serial1', 9600, timeout=1)  # Added timeout for better handling
 time.sleep(2)  # Wait for the serial connection to initialize
 
 def send_data(data):
@@ -14,15 +14,16 @@ def receive_data():
     return None
 
 try:
+    print("Waiting for data from HC-06...")
     while True:
-        # Example of sending data
-        send_data("Hello from Raspberry Pi")
-        time.sleep(1)  # Wait for a second before sending next data
-        
-        # Example of receiving data
+        # Check for incoming data
         received = receive_data()
         if received:
             print(f"Received: {received}")
+
+        # Example of sending data (remove if not needed for your use case)
+        # send_data("Hello from Raspberry Pi")
+        # time.sleep(1)  # Wait before sending next data
 
 except KeyboardInterrupt:
     print("Program interrupted")
