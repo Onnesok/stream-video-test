@@ -1,25 +1,59 @@
-import serial
-import time
+import 'package:flutter/material.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
-# Set up the serial connection to the HC-06 module
-ser = serial.Serial('/dev/serial1', 9600, timeout=1)  # Added timeout for better handling
-time.sleep(2)  # Wait for the serial connection to initialize
+void main() => runApp(MyApp());
 
-def receive_data():
-    if ser.in_waiting > 0:
-        return ser.readline().decode().strip()
-    return None
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: BluetoothChatScreen(),
+    );
+  }
+}
 
-try:
-    print("Waiting for data from HC-06...")
-    while True:
-        # Check for incoming data
-        received = receive_data()
-        if received:
-            print(f"Received: {received}")
+class BluetoothChatScreen extends StatefulWidget {
+  @override
+  _BluetoothChatScreenState createState() => _BluetoothChatScreenState();
+}
 
-except KeyboardInterrupt:
-    print("Program interrupted")
+class _BluetoothChatScreenState extends State<BluetoothChatScreen> {
+  FlutterBluePlus flutterBlue = FlutterBluePlus.instance;
+  BluetoothDevice? connectedDevice;
 
-finally:
-    ser.close()
+  @override
+  void initState() {
+    super.initState();
+    scanForDevices();
+  }
+
+  void scanForDevices() {
+    flutterBlue.scan(timeout: Duration(seconds: 5)).listen((scanResult) {
+      print("Found device: ${scanResult.device.name}");
+      if (scanResult.device.name == "Raspberry Pi") {
+        connectToDevice(scanResult.device);
+      }
+    });
+  }
+
+  void connectToDevice(BluetoothDevice device) async {
+    await device.connect();
+    setState(() {
+      connectedDevice = device;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Bluetooth Chat"),
+      ),
+      body: Center(
+        child: connectedDevice == null
+            ? Text("Scanning for devices...")
+            : Text("Connected to ${connectedDevice!.name}"),
+      ),
+    );
+  }
+}
