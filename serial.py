@@ -1,59 +1,24 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import bluetooth
 
-void main() => runApp(MyApp());
+server_sock = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
+port = 1
+server_sock.bind(("", port))
+server_sock.listen(1)
 
-class MyApp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      home: BluetoothChatScreen(),
-    );
-  }
-}
+print("Waiting for connection on RFCOMM channel", port)
+client_sock, client_info = server_sock.accept()
+print("Accepted connection from", client_info)
 
-class BluetoothChatScreen extends StatefulWidget {
-  @override
-  _BluetoothChatScreenState createState() => _BluetoothChatScreenState();
-}
+try:
+    while True:
+        data = client_sock.recv(1024)
+        if not data:
+            break
+        print(f"Received: {data}")
+        client_sock.send(b"Echo: " + data)
+except OSError:
+    pass
 
-class _BluetoothChatScreenState extends State<BluetoothChatScreen> {
-  FlutterBluePlus flutterBlue = FlutterBluePlus.instance;
-  BluetoothDevice? connectedDevice;
-
-  @override
-  void initState() {
-    super.initState();
-    scanForDevices();
-  }
-
-  void scanForDevices() {
-    flutterBlue.scan(timeout: Duration(seconds: 5)).listen((scanResult) {
-      print("Found device: ${scanResult.device.name}");
-      if (scanResult.device.name == "Raspberry Pi") {
-        connectToDevice(scanResult.device);
-      }
-    });
-  }
-
-  void connectToDevice(BluetoothDevice device) async {
-    await device.connect();
-    setState(() {
-      connectedDevice = device;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("Bluetooth Chat"),
-      ),
-      body: Center(
-        child: connectedDevice == null
-            ? Text("Scanning for devices...")
-            : Text("Connected to ${connectedDevice!.name}"),
-      ),
-    );
-  }
-}
+print("Disconnected.")
+client_sock.close()
+server_sock.close()
